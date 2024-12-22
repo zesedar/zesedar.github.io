@@ -20,6 +20,24 @@
             margin: 0;
 	    font-weight: bold
         }
+	 /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .menu a {
+                font-size: 1rem; /* Smaller font size for mobile */
+            }
+            audio {
+                width: 120px; /* Adjust audio player width for mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .menu a {
+                font-size: 0.8rem; /* Even smaller font size for very small screens */
+            }
+            audio {
+                width: 100px; /* Further reduce audio player size */
+            }
+        }    
     </style>
 	
 </head>
