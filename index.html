@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BlackEvil the Hyena Homepage</title>
+    <meta name="description" content="BlackEvil The Hyena is my name. I'm a progamer.">
+    <meta name="keywords" content="Kékkõi,László,blackevil,hyena,hiéna,brood war,scd,dsa,soth,borg,necromancer,versek">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 20%;
+            background-color: #000;
+            color: #fff;
+	    height: 100%;
+            overflow-y: hidden;
+        }
+        #header {
+            height: 15%;
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+	    overflow: hidden;
+        }
+        #main {
+            flex-grow: 1;
+            overflow-y: hidden;
+        }
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <iframe src="talca.html"></iframe>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column;">
+        <div id="header">
+            <iframe src="cim.html"></iframe>
+        </div>
+        <div id="main">
+            <iframe name="main" src="fomenu.html"></iframe>
+        </div>
+    </div>
+</body>
+</html>
