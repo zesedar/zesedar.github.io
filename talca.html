@@ -30,6 +30,23 @@ Put your HTML text here<!DOCTYPE html>
             width: 80%;
             transition: color 0.3s ease;
         }
+	/* Mobile Optimization */
+        @media (max-width: 768px) {
+            .menu a {
+                font-size: 1.5rem; /* Smaller font size for mobile */
+            }
+            audio {
+                width: 120px; /* Adjust audio player width for mobile */
+            }
+        }
+        @media (max-width: 480px) {
+            .menu a {
+                font-size: 1.2rem; /* Even smaller font size for very small screens */
+            }
+            audio {
+                width: 100px; /* Further reduce audio player size */
+            }
+        }    
         .menu a:hover {
             color: yellow;
         }
