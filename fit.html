@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Progress Tracker → PDF</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);min-height:100vh;color:#fff;padding:20px}
+    .container{max-width:1200px;margin:0 auto}
+    header{text-align:center;padding:30px 0 20px}
+    header h1{font-size:2.6rem;margin-bottom:10px;background:linear-gradient(90deg,#f39c12,#e74c3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header p{color:#9aa0a6;font-size:1.05rem}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:16px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:18px;padding:18px}
+    .card h2{font-size:1.25rem;color:#f39c12;margin-bottom:12px}
+    .hint{color:#b7bcc4;font-size:.95rem;line-height:1.4;margin-top:-6px;margin-bottom:14px;opacity:.95}
+    .hint strong{color:#ffd08a}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    label{display:block;color:#c7cbd1;font-size:.78rem;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase}
+    input,textarea,select{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 12px;color:#fff;outline:none}
+    textarea{min-height:90px;resize:vertical}
+    .full{grid-column:1/-1}
+    .divider{height:1px;background:rgba(255,255,255,0.10);margin:14px 0}
+    .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+    button{border:none;border-radius:14px;padding:12px 14px;font-weight:700;cursor:pointer;color:#111;background:linear-gradient(90deg,#f39c12,#e74c3c)}
+    button.secondary{background:rgba(255,255,255,0.10);color:#fff;border:1px solid rgba(255,255,255,0.16)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .photo-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .photo-box{background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.18);border-radius:14px;padding:12px}
+    .photo-box .preview{width:100%;aspect-ratio:3/4;border-radius:12px;background:linear-gradient(135deg,#2c3e50,#34495e);display:flex;align-items:center;justify-content:center;color:#9aa0a6;font-size:2.5rem;overflow:hidden;margin-bottom:10px}
+    .photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+    .photo-box .title{font-weight:800;color:#f39c12;margin-bottom:10px}
+    .report-wrap{background:#fff;color:#111;border-radius:18px;overflow:hidden;border:1px solid rgba(0,0,0,0.08)}
+    .report-header{padding:18px 20px;background:linear-gradient(90deg,#f39c12,#e74c3c);color:#111}
+    .report-header h3{font-size:1.45rem;margin-bottom:6px}
+    .report-header .meta{font-size:.95rem;opacity:.95}
+    .report-body{padding:18px 20px 20px}
+    .report-section-title{margin:16px 0 10px;font-size:1.1rem;color:#b45309;font-weight:900;letter-spacing:.02em}
+    .report-note{background:#fff7ed;border:1px solid #fed7aa;padding:10px 12px;border-radius:12px;font-size:.95rem;line-height:1.35}
+    .report-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    @media(max-width:980px){.report-photos{grid-template-columns:1fr}}
+    .report-photo{border:1px solid rgba(0,0,0,0.10);border-radius:12px;overflow:hidden}
+    .report-photo .img{width:100%;aspect-ratio:3/4;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:2rem;overflow:hidden}
+    .report-photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .report-photo .cap{padding:10px 12px;font-weight:800;background:#fafafa;border-top:1px solid rgba(0,0,0,0.08)}
+    .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    @media(max-width:980px){.report-grid{grid-template-columns:1fr}}
+    .kv{border:1px solid rgba(0,0,0,0.10);border-radius:12px;padding:10px 12px;background:#fff;display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .kv .k{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;font-weight:800}
+    .kv .v{font-size:1rem;font-weight:900;color:#111827;text-align:right;white-space:nowrap}
+    .report-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+    .report-box{border:1px solid rgba(0,0,0,0.10);border-radius:12px;padding:10px 12px;background:#fff}
+    .report-box .title{font-weight:900;color:#111827;margin-bottom:6px}
+    .report-box .text{color:#374151;line-height:1.35;white-space:pre-wrap}
+    .small-muted{color:#6b7280;font-size:.92rem;line-height:1.35}
+    .unit-row{display:grid;grid-template-columns:1fr 130px;gap:10px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Fitness Progress Tracker</h1>
+      <p>Fill in your details, upload the 3 photos, then export everything into a PDF snapshot.</p>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Enter your data</h2>
+        <div class="divider"></div>
+
+        <h3 style="color:#f39c12;margin-bottom:10px">Photos</h3>
+        <div class="hint" style="margin-bottom:10px">Take photos in the morning, before eating, and after using the bathroom.</div>
+        <div class="hint" style="margin-bottom:12px">
+          Best results: <strong>portrait 3:4</strong> ratio (e.g., <strong>1500×2000</strong> or <strong>1200×1600</strong>). Photos are center-cropped to 3:4 to prevent distortion.
+        </div>
+
+        <div class="photo-inputs">
+          <div class="photo-box">
+            <div class="title">Front</div>
+            <div class="preview" id="prevFront">🖼️</div>
+            <label for="photoFront">Upload image</label>
+            <input id="photoFront" type="file" accept="image/*" />
+          </div>
+          <div class="photo-box">
+            <div class="title">Side</div>
+            <div class="preview" id="prevSide">🖼️</div>
+            <label for="photoSide">Upload image</label>
+            <input id="photoSide" type="file" accept="image/*" />
+          </div>
+          <div class="photo-box">
+            <div class="title">Back</div>
+            <div class="preview" id="prevBack">🖼️</div>
+            <label for="photoBack">Upload image</label>
+            <input id="photoBack" type="file" accept="image/*" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3 style="color:#f39c12;margin-bottom:10px">Basic Stats</h3>
+        <div class="form-grid">
+          <div>
+            <label for="name">Name (optional)</label>
+            <input id="name" placeholder="e.g., John Doe" />
+          </div>
+          <div>
+            <label for="date">Date</label>
+            <input id="date" type="date" />
+          </div>
+
+          <div class="unit-row">
+            <div>
+              <label for="weight">Weight</label>
+              <input id="weight" placeholder="e.g., 75" />
+            </div>
+            <div>
+              <label for="weightUnit">Unit</label>
+              <select id="weightUnit">
+                <option value="kg" selected>kg</option>
+                <option value="lb">lb</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="unit-row">
+            <div>
+              <label for="height">Height</label>
+              <input id="height" placeholder="e.g., 180" />
+            </div>
+            <div>
+              <label for="heightUnit">Unit</label>
+              <select id="heightUnit">
+                <option value="cm" selected>cm</option>
+                <option value="in">in</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="unit-row">
+            <div>
+              <label for="age">Age</label>
+              <input id="age" placeholder="e.g., 25" />
+            </div>
+            <div>
+              <label for="ageUnit">Unit</label>
+              <select id="ageUnit">
+                <option value="years" selected>years</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="full">
+            <label for="photoNote">Photo note</label>
+            <input id="photoNote" value="Take photos in the morning, before eating, and after using the bathroom." />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3 style="color:#f39c12;margin-bottom:10px">Measurements</h3>
+        <div class="form-grid">
+          <div class="unit-row">
+            <div><label for="mNeck">Neck</label><input id="mNeck" placeholder="e.g., 40" /></div>
+            <div><label for="uNeck">Unit</label><select id="uNeck"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mChest">Chest</label><input id="mChest" placeholder="e.g., 102" /></div>
+            <div><label for="uChest">Unit</label><select id="uChest"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mBiceps">Biceps</label><input id="mBiceps" placeholder="e.g., 38" /></div>
+            <div><label for="uBiceps">Unit</label><select id="uBiceps"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mForearm">Forearm</label><input id="mForearm" placeholder="e.g., 30" /></div>
+            <div><label for="uForearm">Unit</label><select id="uForearm"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mWrist">Wrist</label><input id="mWrist" placeholder="e.g., 17" /></div>
+            <div><label for="uWrist">Unit</label><select id="uWrist"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mStomach">Stomach region</label><input id="mStomach" placeholder="e.g., 85" /></div>
+            <div><label for="uStomach">Unit</label><select id="uStomach"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mWaist">Waist</label><input id="mWaist" placeholder="e.g., 80" /></div>
+            <div><label for="uWaist">Unit</label><select id="uWaist"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mGlutes">Glutes</label><input id="mGlutes" placeholder="e.g., 95" /></div>
+            <div><label for="uGlutes">Unit</label><select id="uGlutes"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mThigh">Thigh</label><input id="mThigh" placeholder="e.g., 58" /></div>
+            <div><label for="uThigh">Unit</label><select id="uThigh"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+          <div class="unit-row">
+            <div><label for="mQuads">Quadriceps</label><input id="mQuads" placeholder="e.g., 56" /></div>
+            <div><label for="uQuads">Unit</label><select id="uQuads"><option value="cm" selected>cm</option><option value="in">in</option></select></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3 style="color:#f39c12;margin-bottom:10px">Extra Information</h3>
+        <div class="form-grid">
+          <div class="full">
+            <label for="supplements">Supplements you use</label>
+            <input id="supplements" placeholder="e.g., whey protein, creatine, omega-3" />
+          </div>
+
+          <div class="unit-row">
+            <div><label for="workoutsPerWeek">Workouts per week</label><input id="workoutsPerWeek" placeholder="e.g., 4" /></div>
+            <div><label for="workoutsUnit">Unit</label><select id="workoutsUnit"><option value="sessions/week" selected>sessions/week</option></select></div>
+          </div>
+
+          <div class="full">
+            <label for="trainingDays">Which days?</label>
+            <input id="trainingDays" placeholder="e.g., Mon, Tue, Thu, Sat" />
+          </div>
+
+          <div class="unit-row">
+            <div><label for="sleepHours">Sleep</label><input id="sleepHours" placeholder="e.g., 7.5" /></div>
+            <div><label for="sleepUnit">Unit</label><select id="sleepUnit"><option value="hours/day" selected>hours/day</option></select></div>
+          </div>
+
+          <div class="unit-row">
+            <div><label for="protein">Avg protein/day</label><input id="protein" placeholder="e.g., 160" /></div>
+            <div><label for="proteinUnit">Unit</label><select id="proteinUnit"><option value="g/day" selected>g/day</option></select></div>
+          </div>
+
+          <div class="unit-row">
+            <div><label for="carbs">Avg carbs/day</label><input id="carbs" placeholder="e.g., 220" /></div>
+            <div><label for="carbsUnit">Unit</label><select id="carbsUnit"><option value="g/day" selected>g/day</option></select></div>
+          </div>
+
+          <div class="unit-row">
+            <div><label for="fat">Avg fat/day</label><input id="fat" placeholder="e.g., 70" /></div>
+            <div><label for="fatUnit">Unit</label><select id="fatUnit"><option value="g/day" selected>g/day</option></select></div>
+          </div>
+
+          <div class="full">
+            <label for="notes">Notes</label>
+            <textarea id="notes" placeholder="Anything else you want to track..."></textarea>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="btnPdf">Generate PDF</button>
+          <button id="btnSave" class="secondary">Save locally</button>
+          <button id="btnLoad" class="secondary">Load saved</button>
+          <button id="btnReset" class="secondary">Reset</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>PDF Preview</h2>
+        <div class="hint">This is what will be exported to PDF.</div>
+
+        <div id="report" class="report-wrap">
+          <div class="report-header">
+            <h3>Fitness Progress Report</h3>
+            <div class="meta">
+              <span id="rName">Name: —</span> • <span id="rDate">Date: —</span>
+            </div>
+          </div>
+
+          <div class="report-body">
+            <div class="report-section-title">Progress Photos</div>
+            <div class="report-note" id="rPhotoNote">Take photos in the morning, before eating, and after using the bathroom.</div>
+
+            <div class="report-photos">
+              <div class="report-photo">
+                <div class="img" id="rImgFront">🖼️</div>
+                <div class="cap">Front</div>
+              </div>
+              <div class="report-photo">
+                <div class="img" id="rImgSide">🖼️</div>
+                <div class="cap">Side</div>
+              </div>
+              <div class="report-photo">
+                <div class="img" id="rImgBack">🖼️</div>
+                <div class="cap">Back</div>
+              </div>
+            </div>
+
+            <div class="report-section-title">Basic Stats</div>
+            <div class="report-grid">
+              <div class="kv"><div class="k">Weight</div><div class="v" id="rWeight">—</div></div>
+              <div class="kv"><div class="k">Height</div><div class="v" id="rHeight">—</div></div>
+              <div class="kv"><div class="k">Age</div><div class="v" id="rAge">—</div></div>
+            </div>
+
+            <div class="report-section-title">Measurements</div>
+            <div class="report-list">
+              <div class="kv"><div class="k">Neck</div><div class="v" id="rNeck">—</div></div>
+              <div class="kv"><div class="k">Chest</div><div class="v" id="rChest">—</div></div>
+              <div class="kv"><div class="k">Biceps</div><div class="v" id="rBiceps">—</div></div>
+              <div class="kv"><div class="k">Forearm</div><div class="v" id="rForearm">—</div></div>
+              <div class="kv"><div class="k">Wrist</div><div class="v" id="rWrist">—</div></div>
+              <div class="kv"><div class="k">Stomach region</div><div class="v" id="rStomach">—</div></div>
+              <div class="kv"><div class="k">Waist</div><div class="v" id="rWaist">—</div></div>
+              <div class="kv"><div class="k">Glutes</div><div class="v" id="rGlutes">—</div></div>
+              <div class="kv"><div class="k">Thigh</div><div class="v" id="rThigh">—</div></div>
+              <div class="kv"><div class="k">Quadriceps</div><div class="v" id="rQuads">—</div></div>
+            </div>
+
+            <div class="report-section-title">Extra Information</div>
+            <div class="report-list">
+              <div class="report-box">
+                <div class="title">Supplements</div>
+                <div class="text" id="rSupplements">—</div>
+              </div>
+              <div class="report-box">
+                <div class="title">Training</div>
+                <div class="text">
+                  <div><b>Workouts:</b> <span id="rWorkouts">—</span></div>
+                  <div><b>Days:</b> <span id="rDays">—</span></div>
+                </div>
+              </div>
+              <div class="report-box">
+                <div class="title">Sleep</div>
+                <div class="text" id="rSleep">—</div>
+              </div>
+              <div class="report-box">
+                <div class="title">Daily macros</div>
+                <div class="text">
+                  <div><b>Protein:</b> <span id="rProtein">—</span></div>
+                  <div><b>Carbs:</b> <span id="rCarbs">—</span></div>
+                  <div><b>Fat:</b> <span id="rFat">—</span></div>
+                </div>
+              </div>
+              <div class="report-box" style="grid-column:1/-1">
+                <div class="title">Notes</div>
+                <div class="text small-muted" id="rNotes">—</div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px" class="small-muted">
+              This PDF is a snapshot of your recorded state at the selected date.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const $=id=>document.getElementById(id)
+    const STORAGE_KEY="fitness_progress_pdf_v4"
+    const TARGET_RATIO=3/4
+    const IMG={front:"",side:"",back:""}
+
+    function setText(el,val){el.textContent=(val&&String(val).trim())?val:"—"}
+    function withUnit(value,unit){const v=(value||"").trim();const u=(unit||"").trim();return v?(u?`${v} ${u}`:v):"—"}
+
+    function syncToReport(){
+      setText($("rName"),`Name: ${$("name").value||"—"}`)
+      setText($("rDate"),`Date: ${$("date").value||"—"}`)
+
+      setText($("rWeight"),withUnit($("weight").value,$("weightUnit").value))
+      setText($("rHeight"),withUnit($("height").value,$("heightUnit").value))
+      setText($("rAge"),withUnit($("age").value,$("ageUnit").value))
+
+      setText($("rNeck"),withUnit($("mNeck").value,$("uNeck").value))
+      setText($("rChest"),withUnit($("mChest").value,$("uChest").value))
+      setText($("rBiceps"),withUnit($("mBiceps").value,$("uBiceps").value))
+      setText($("rForearm"),withUnit($("mForearm").value,$("uForearm").value))
+      setText($("rWrist"),withUnit($("mWrist").value,$("uWrist").value))
+      setText($("rStomach"),withUnit($("mStomach").value,$("uStomach").value))
+      setText($("rWaist"),withUnit($("mWaist").value,$("uWaist").value))
+      setText($("rGlutes"),withUnit($("mGlutes").value,$("uGlutes").value))
+      setText($("rThigh"),withUnit($("mThigh").value,$("uThigh").value))
+      setText($("rQuads"),withUnit($("mQuads").value,$("uQuads").value))
+
+      setText($("rSupplements"),$("supplements").value)
+      setText($("rWorkouts"),withUnit($("workoutsPerWeek").value,$("workoutsUnit").value))
+      setText($("rDays"),$("trainingDays").value)
+      setText($("rSleep"),withUnit($("sleepHours").value,$("sleepUnit").value))
+      setText($("rProtein"),withUnit($("protein").value,$("proteinUnit").value))
+      setText($("rCarbs"),withUnit($("carbs").value,$("carbsUnit").value))
+      setText($("rFat"),withUnit($("fat").value,$("fatUnit").value))
+      setText($("rNotes"),$("notes").value)
+
+      $("rPhotoNote").textContent=($("photoNote").value||"").trim()?$("photoNote").value:"—"
+    }
+
+    function setPreview(containerEl,dataUrl){
+      containerEl.innerHTML=""
+      const im=document.createElement("img")
+      im.src=dataUrl
+      containerEl.appendChild(im)
+    }
+
+    async function fileToCroppedDataURL(file,targetRatio=TARGET_RATIO,outW=1200,outH=1600,quality=0.86){
+      const dataUrl=await new Promise((resolve,reject)=>{
+        const r=new FileReader()
+        r.onload=()=>resolve(r.result)
+        r.onerror=reject
+        r.readAsDataURL(file)
+      })
+      const img=new Image()
+      img.src=dataUrl
+      await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject})
+      const srcW=img.width,srcH=img.height
+      const srcRatio=srcW/srcH
+      let cropW=srcW,cropH=srcH,sx=0,sy=0
+      if(srcRatio>targetRatio){cropW=Math.round(srcH*targetRatio);sx=Math.round((srcW-cropW)/2)}
+      else if(srcRatio<targetRatio){cropH=Math.round(srcW/targetRatio);sy=Math.round((srcH-cropH)/2)}
+      let w=outW,h=Math.round(outW/targetRatio)
+      if(h>outH){h=outH;w=Math.round(outH*targetRatio)}
+      const canvas=document.createElement("canvas")
+      canvas.width=w
+      canvas.height=h
+      canvas.getContext("2d").drawImage(img,sx,sy,cropW,cropH,0,0,w,h)
+      return canvas.toDataURL("image/jpeg",quality)
+    }
+
+    async function handlePhoto(inputEl,prevEl,reportEl,key){
+      const file=inputEl.files&&inputEl.files[0]
+      if(!file) return
+      const dataUrl=await fileToCroppedDataURL(file,TARGET_RATIO,1200,1600,0.86)
+      IMG[key]=dataUrl
+      setPreview(prevEl,dataUrl)
+      setPreview(reportEl,dataUrl)
+    }
+
+    function collectFormData(){
+      return {
+        name:$("name").value,date:$("date").value,weight:$("weight").value,weightUnit:$("weightUnit").value,
+        height:$("height").value,heightUnit:$("heightUnit").value,age:$("age").value,ageUnit:$("ageUnit").value,
+        photoNote:$("photoNote").value,
+        mNeck:$("mNeck").value,uNeck:$("uNeck").value,mChest:$("mChest").value,uChest:$("uChest").value,
+        mBiceps:$("mBiceps").value,uBiceps:$("uBiceps").value,mForearm:$("mForearm").value,uForearm:$("uForearm").value,
+        mWrist:$("mWrist").value,uWrist:$("uWrist").value,mStomach:$("mStomach").value,uStomach:$("uStomach").value,
+        mWaist:$("mWaist").value,uWaist:$("uWaist").value,mGlutes:$("mGlutes").value,uGlutes:$("uGlutes").value,
+        mThigh:$("mThigh").value,uThigh:$("uThigh").value,mQuads:$("mQuads").value,uQuads:$("uQuads").value,
+        supplements:$("supplements").value,workoutsPerWeek:$("workoutsPerWeek").value,workoutsUnit:$("workoutsUnit").value,
+        trainingDays:$("trainingDays").value,sleepHours:$("sleepHours").value,sleepUnit:$("sleepUnit").value,
+        protein:$("protein").value,proteinUnit:$("proteinUnit").value,carbs:$("carbs").value,carbsUnit:$("carbsUnit").value,
+        fat:$("fat").value,fatUnit:$("fatUnit").value,notes:$("notes").value,IMG
+      }
+    }
+
+    function applyFormData(d){
+      $("name").value=d.name||""
+      $("date").value=d.date||""
+      $("weight").value=d.weight||""
+      $("weightUnit").value=d.weightUnit||"kg"
+      $("height").value=d.height||""
+      $("heightUnit").value=d.heightUnit||"cm"
+      $("age").value=d.age||""
+      $("ageUnit").value=d.ageUnit||"years"
+      $("photoNote").value=d.photoNote||"Take photos in the morning, before eating, and after using the bathroom."
+
+      $("mNeck").value=d.mNeck||""; $("uNeck").value=d.uNeck||"cm"
+      $("mChest").value=d.mChest||""; $("uChest").value=d.uChest||"cm"
+      $("mBiceps").value=d.mBiceps||""; $("uBiceps").value=d.uBiceps||"cm"
+      $("mForearm").value=d.mForearm||""; $("uForearm").value=d.uForearm||"cm"
+      $("mWrist").value=d.mWrist||""; $("uWrist").value=d.uWrist||"cm"
+      $("mStomach").value=d.mStomach||""; $("uStomach").value=d.uStomach||"cm"
+      $("mWaist").value=d.mWaist||""; $("uWaist").value=d.uWaist||"cm"
+      $("mGlutes").value=d.mGlutes||""; $("uGlutes").value=d.uGlutes||"cm"
+      $("mThigh").value=d.mThigh||""; $("uThigh").value=d.uThigh||"cm"
+      $("mQuads").value=d.mQuads||""; $("uQuads").value=d.uQuads||"cm"
+
+      $("supplements").value=d.supplements||""
+      $("workoutsPerWeek").value=d.workoutsPerWeek||""; $("workoutsUnit").value=d.workoutsUnit||"sessions/week"
+      $("trainingDays").value=d.trainingDays||""
+      $("sleepHours").value=d.sleepHours||""; $("sleepUnit").value=d.sleepUnit||"hours/day"
+      $("protein").value=d.protein||""; $("proteinUnit").value=d.proteinUnit||"g/day"
+      $("carbs").value=d.carbs||""; $("carbsUnit").value=d.carbsUnit||"g/day"
+      $("fat").value=d.fat||""; $("fatUnit").value=d.fatUnit||"g/day"
+      $("notes").value=d.notes||""
+
+      if(d.IMG){
+        IMG.front=d.IMG.front||""; IMG.side=d.IMG.side||""; IMG.back=d.IMG.back||""
+        if(IMG.front){setPreview($("prevFront"),IMG.front);setPreview($("rImgFront"),IMG.front)}else{$("prevFront").textContent="🖼️";$("rImgFront").textContent="🖼️"}
+        if(IMG.side){setPreview($("prevSide"),IMG.side);setPreview($("rImgSide"),IMG.side)}else{$("prevSide").textContent="🖼️";$("rImgSide").textContent="🖼️"}
+        if(IMG.back){setPreview($("prevBack"),IMG.back);setPreview($("rImgBack"),IMG.back)}else{$("prevBack").textContent="🖼️";$("rImgBack").textContent="🖼️"}
+      }
+      syncToReport()
+    }
+
+    async function generatePdf(){
+      syncToReport()
+      if(document.fonts&&document.fonts.ready){try{await document.fonts.ready}catch{}}
+      await new Promise(requestAnimationFrame)
+      const report=$("report")
+      const filenameName=($("name").value||"Fitness_Progress").trim().replace(/\s+/g,"_")
+      const filenameDate=($("date").value||"").trim()
+      const filename=filenameDate?`${filenameName}_${filenameDate}.pdf`:`${filenameName}.pdf`
+      const canvas=await html2canvas(report,{scale:2,backgroundColor:"#ffffff",useCORS:true,allowTaint:true,scrollY:-window.scrollY,scrollX:-window.scrollX})
+      const imgData=canvas.toDataURL("image/jpeg",0.95)
+      const {jsPDF}=window.jspdf
+      const pdf=new jsPDF("p","mm","a4")
+      const pageW=pdf.internal.pageSize.getWidth()
+      const pageH=pdf.internal.pageSize.getHeight()
+      const imgProps=pdf.getImageProperties(imgData)
+      const imgW=pageW
+      const imgH=(imgProps.height*imgW)/imgProps.width
+      let heightLeft=imgH
+      let position=0
+      pdf.addImage(imgData,"JPEG",0,position,imgW,imgH)
+      heightLeft-=pageH
+      while(heightLeft>0){
+        position=heightLeft-imgH
+        pdf.addPage()
+        pdf.addImage(imgData,"JPEG",0,position,imgW,imgH)
+        heightLeft-=pageH
+      }
+      pdf.save(filename)
+    }
+
+    ;(function init(){
+      const d=new Date()
+      const yyyy=d.getFullYear()
+      const mm=String(d.getMonth()+1).padStart(2,"0")
+      const dd=String(d.getDate()).padStart(2,"0")
+      $("date").value=`${yyyy}-${mm}-${dd}`
+      syncToReport()
+      document.querySelectorAll("input,textarea,select").forEach(el=>{
+        el.addEventListener("input",syncToReport)
+        el.addEventListener("change",syncToReport)
+      })
+      $("photoFront").addEventListener("change",()=>handlePhoto($("photoFront"),$("prevFront"),$("rImgFront"),"front"))
+      $("photoSide").addEventListener("change",()=>handlePhoto($("photoSide"),$("prevSide"),$("rImgSide"),"side"))
+      $("photoBack").addEventListener("change",()=>handlePhoto($("photoBack"),$("prevBack"),$("rImgBack"),"back"))
+      $("btnPdf").addEventListener("click",async()=>{$("btnPdf").disabled=true;try{await generatePdf()}finally{$("btnPdf").disabled=false}})
+      $("btnSave").addEventListener("click",()=>{localStorage.setItem(STORAGE_KEY,JSON.stringify(collectFormData()));alert("Saved locally in your browser.")})
+      $("btnLoad").addEventListener("click",()=>{const raw=localStorage.getItem(STORAGE_KEY);if(!raw){alert("No saved data found.");return}try{applyFormData(JSON.parse(raw));alert("Loaded saved data.")}catch{alert("Saved data could not be read.")}})
+      $("btnReset").addEventListener("click",()=>{
+        if(!confirm("Reset all fields?"))return
+        document.querySelectorAll("input,textarea").forEach(el=>{if(el.type==="file")el.value="";else el.value=""})
+        IMG.front="";IMG.side="";IMG.back=""
+        $("prevFront").textContent="🖼️";$("prevSide").textContent="🖼️";$("prevBack").textContent="🖼️"
+        $("rImgFront").textContent="🖼️";$("rImgSide").textContent="🖼️";$("rImgBack").textContent="🖼️"
+        const d=new Date()
+        const yyyy=d.getFullYear()
+        const mm=String(d.getMonth()+1).padStart(2,"0")
+        const dd=String(d.getDate()).padStart(2,"0")
+        $("date").value=`${yyyy}-${mm}-${dd}`
+        $("photoNote").value="Take photos in the morning, before eating, and after using the bathroom."
+        document.querySelectorAll("select").forEach(sel=>{
+          const id=sel.id
+          if(id==="weightUnit")sel.value="kg"
+          else if(id==="heightUnit")sel.value="cm"
+          else if(id==="ageUnit")sel.value="years"
+          else if(id==="workoutsUnit")sel.value="sessions/week"
+          else if(id==="sleepUnit")sel.value="hours/day"
+          else if(id==="proteinUnit"||id==="carbsUnit"||id==="fatUnit")sel.value="g/day"
+          else sel.value="cm"
+        })
+        syncToReport()
+      })
+    })()
+  </script>
+</body>
+</html>
